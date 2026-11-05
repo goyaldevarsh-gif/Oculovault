@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <title>OculoVault</title>
-<meta name="ov-build" content="2026.11.05-1541">
+<meta name="ov-build" content="2026.11.05-1606">
 <meta name="description" content="OculoVault — Your Ophthalmology Practice, Organised.">
 <meta name="theme-color" content="#F8FAFC">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
@@ -299,6 +299,18 @@ a{text-decoration:none}a.lnk,.help .lnk{text-decoration:underline}
 .upd{position:fixed;top:calc(var(--sat) + 10px);left:50%;transform:translateX(-50%);z-index:400;background:var(--navy);color:#fff;border-radius:16px;padding:8px 8px 8px 16px;display:flex;gap:10px;align-items:center;box-shadow:var(--sh2);font-weight:600;font-size:14px;max-width:94vw;white-space:nowrap}
 .upd button{background:var(--teal);color:#fff;border-radius:11px;padding:8px 14px;font-weight:700;font-size:13.5px}
 .upd button.x{background:none;padding:6px;opacity:.7}
+.pi{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}
+.pi img{width:64px;height:64px;border-radius:12px;object-fit:cover;flex:none}
+.pi textarea{height:64px;min-height:64px;padding:8px 10px;font-size:14px;resize:none}
+.th .nt{position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:10px;background:rgba(15,41,66,.75);color:#fff;display:grid;place-items:center}
+.cap div{white-space:pre-wrap}
+.gd{padding:2px 16px}
+.gd details{border-bottom:1px solid #E6ECF1}.gd details:last-child{border:0}
+.gd summary{list-style:none;cursor:pointer;padding:14px 22px 14px 0;font-weight:700;color:var(--navy);position:relative;min-height:44px}
+.gd summary::-webkit-details-marker{display:none}
+.gd summary::after{content:'+';position:absolute;right:2px;top:12px;font-size:22px;font-weight:500;color:var(--teal)}
+.gd details[open] summary::after{content:'–'}
+.gd .help{margin:0 0 14px;line-height:1.55;color:#334155}
 </style></head>
 <body><div id="app"></div>
 <script>
@@ -397,19 +409,19 @@ const MODS={
  oculoplasty:{key:'oculoplasty',label:'Oculoplasty',sub:'Eyelid · Lacrimal · Orbit',icon:'lashes',cls:'o',
   dx:['Ptosis','Entropion','Ectropion','Dermatochalasis','Eyelid Mass','Dacryocystitis','DCR / NLDO','Orbital Disorder','Other'],
   inv:['CT Orbit','MRI Orbit','Other'],
-  cats:['preop','postop','followup','ct','mri','other']},
+  cats:['clinical','preop','postop','followup','ct','mri','other']},
  squint:{key:'squint',label:'Squint',sub:'Strabismus · Alignment',icon:'squint',cls:'s',
   dx:['Esotropia','Exotropia','Hypertropia','Hypotropia','Paralytic Squint','Restrictive Squint','Other'],
   inv:[],
-  cats:['preop','gaze','postop','followup','hess','other']},
+  cats:['clinical','preop','gaze','postop','followup','hess','other']},
  trauma:{key:'trauma',label:'Trauma',sub:'Ocular & orbital injuries',icon:'traumaeye',cls:'t',
   dx:['Blunt Ocular Trauma','Open Globe Injury','Closed Globe Injury','Corneal Injury','Scleral Injury','Hyphema','Lid Laceration','Canalicular Injury','Orbital Fracture','Chemical Injury','Other'],
   inv:['CT Orbit','MRI Orbit','X-ray','Other'],
-  cats:['initial','preop','postop','followup','ct','mri','xray','other']},
+  cats:['clinical','initial','preop','postop','followup','ct','mri','xray','other']},
 };
 const MODKEYS=Object.keys(MODS);
-const CATS={initial:'Initial',preop:'Pre-op',postop:'Post-op',followup:'Follow-up',ct:'CT',mri:'MRI',xray:'X-ray',gaze:'9-Gaze',hess:'Hess Chart',other:'Other'};
-const CATORDER=['initial','preop','gaze','postop','followup','ct','mri','xray','hess','other'];
+const CATS={clinical:'Clinical',initial:'Initial',preop:'Pre-op',postop:'Post-op',followup:'Follow-up',ct:'CT',mri:'MRI',xray:'X-ray',gaze:'9-Gaze',hess:'Hess Chart',other:'Other'};
+const CATORDER=['clinical','initial','preop','gaze','postop','followup','ct','mri','xray','hess','other'];
 
 /* ---------- IndexedDB ---------- */
 const DB={
@@ -568,9 +580,9 @@ function openViewer(ids,start,{onChange}={}){
 function editMediaSheet(id,done){
   const m=byId('media',id),pm=casesOf(m.patientId).map(c=>c.module);const mod=m.module&&MODS[m.module]?m.module:null;
   const cats=mod?MODS[mod].cats:CATORDER;
-  const sh=openSheet({title:'Image details',body:`<div class="fld"><label>Category</label><div class="chips" id="ec">${cats.map(c=>`<button class="chip" data-c="${c}" aria-pressed="${c===m.category}">${CATS[c]}</button>`).join('')}</div></div>
+  const sh=openSheet({title:'Photo note & details',body:`<div class="fld"><label>Category</label><div class="chips" id="ec">${cats.map(c=>`<button class="chip" data-c="${c}" aria-pressed="${c===m.category}">${CATS[c]}</button>`).join('')}</div></div>
    <div class="fld"><label>Date</label><input type="date" class="inp" id="ed" value="${m.date}" max="${today()}"></div>
-   <div class="fld"><label>Description</label><input class="inp" id="edd" placeholder="e.g. Right gaze, 1 week post-op" value="${esc(m.desc||'')}"></div>`,
+   <div class="fld"><label>Note</label><textarea class="inp" id="edd" rows="3" placeholder="e.g. Right gaze, 1 week post-op">${esc(m.desc||'')}</textarea></div>`,
    footer:`<button class="btn pri" id="es">Save</button>`});
   let cat=m.category;
   sh.el.addEventListener('click',async e=>{const c=e.target.closest('[data-c]');if(c){cat=c.dataset.c;$$('#ec .chip',sh.el).forEach(x=>x.setAttribute('aria-pressed',x===c))}
@@ -588,31 +600,42 @@ function openCompare(a,b){
 /* ---------- add-images flow (camera / gallery → details → save) ---------- */
 function addImagesFlow({patientId,module,category,visitId,date,onDone}){
   const cs=casesOf(patientId);
-  const src=openSheet({title:'Add images',body:`<div class="row2" style="margin-bottom:10px"><button class="btn ghost" data-src="cam" style="height:96px;flex-direction:column">${I('camera','lg')}Take photo</button><button class="btn ghost" data-src="gal" style="height:96px;flex-direction:column">${I('image','lg')}From gallery</button></div><p class="help" style="text-align:center">Select several at once from the gallery · CT / MRI screenshots too</p>`});
+  const src=openSheet({title:'Add images',body:`<div class="row2" style="margin-bottom:10px"><button class="btn ghost" data-src="cam" style="height:96px;flex-direction:column">${I('camera','lg')}Take photo</button><button class="btn ghost" data-src="gal" style="height:96px;flex-direction:column">${I('image','lg')}From gallery</button></div><p class="help" style="text-align:center">Camera or gallery · select many at once · CT / MRI / X-ray screenshots too</p>`});
   src.el.addEventListener('click',async e=>{const b=e.target.closest('[data-src]');if(!b)return;
     const files=await pickFiles({camera:b.dataset.src==='cam'});src.close();if(files.length)detailsSheet(files)});
   function detailsSheet(files){
     let mod=module||(cs[0]&&cs[0].module)||null,cat=category||null;
-    const urls=files.map(f=>URL.createObjectURL(f));
-    const sh=openSheet({title:`${files.length} image${files.length>1?'s':''} selected`,body:`
-      <div class="pre">${urls.map(u=>`<img src="${u}" alt="">`).join('')}</div>
+    const items=files.map(f=>({f,u:URL.createObjectURL(f),note:''}));
+    const sh=openSheet({title:'Add images',body:`
+      <div id="pl"></div>
+      <div class="row2" style="margin-bottom:12px"><button class="btn sec sm" data-more="cam">${I('camera','sm')} Take another</button><button class="btn sec sm" data-more="gal">${I('image','sm')} Add from gallery</button></div>
       ${cs.length>1?`<div class="fld"><label>Specialty</label><div class="chips seg" id="am">${cs.map(c=>`<button class="chip" data-m="${c.module}" aria-pressed="${c.module===mod}">${MODS[c.module].label}</button>`).join('')}</div></div>`:''}
-      <div class="fld"><label>Category <span class="req">*</span></label><div class="chips" id="ac"></div></div>
-      <div class="row2"><div class="fld"><label>Date</label><input type="date" class="inp" id="ad" value="${date||today()}" max="${today()}"></div><div class="fld"><label>Description</label><input class="inp" id="adesc" placeholder="Optional"></div></div>`,
-      footer:`<button class="btn pri" id="asave">${I('check','sm')} Save ${files.length>1?'all':''}</button>`});
-    const drawCats=()=>{const list=mod?MODS[mod].cats:CATORDER;if(cat&&!list.includes(cat))cat=null;$('#ac',sh.el).innerHTML=list.map(c=>`<button class="chip" data-c="${c}" aria-pressed="${c===cat}">${CATS[c]}</button>`).join('')};drawCats();
+      <div class="fld"><label>Type <span class="req">*</span></label><div class="chips" id="ac"></div></div>
+      <div class="fld"><label>Date</label><input type="date" class="inp" id="ad" value="${date||today()}" max="${today()}"></div>`,
+      footer:`<button class="btn pri" id="asave"></button>`});
+    const drawList=()=>{
+      $('#pl',sh.el).innerHTML=items.map((it,i)=>`<div class="pi"><img src="${it.u}" alt=""><div style="flex:1;min-width:0"><textarea class="inp" rows="2" data-n="${i}" placeholder="Note for this photo (optional)">${esc(it.note)}</textarea></div><button class="ib" data-rm="${i}" aria-label="Remove photo">${I('x','sm')}</button></div>`).join('');
+      $('#asave',sh.el).innerHTML=`${I('check','sm')} Save ${items.length} photo${items.length>1?'s':''}`;
+    };
+    const drawCats=()=>{const list=mod?MODS[mod].cats:CATORDER;if(cat&&!list.includes(cat))cat=null;$('#ac',sh.el).innerHTML=list.map(c=>`<button class="chip" data-c="${c}" aria-pressed="${c===cat}">${CATS[c]}</button>`).join('')};
+    drawList();drawCats();
+    const cleanup=()=>items.forEach(it=>URL.revokeObjectURL(it.u));
+    sh.el.addEventListener('input',e=>{const t=e.target.closest('[data-n]');if(t)items[+t.dataset.n].note=t.value});
     sh.el.addEventListener('click',async e=>{
+      const mo=e.target.closest('[data-more]');
+      if(mo){const fl=await pickFiles({camera:mo.dataset.more==='cam'});fl.forEach(f=>items.push({f,u:URL.createObjectURL(f),note:''}));if(fl.length){drawList();const l=$('#pl',sh.el);l.lastElementChild&&l.lastElementChild.scrollIntoView({block:'nearest'})}return}
+      const rm=e.target.closest('[data-rm]');if(rm){const it=items.splice(+rm.dataset.rm,1)[0];URL.revokeObjectURL(it.u);if(!items.length){sh.close();return}drawList();return}
       const m=e.target.closest('[data-m]');if(m){mod=m.dataset.m;$$('#am .chip',sh.el).forEach(x=>x.setAttribute('aria-pressed',x===m));drawCats()}
       const c=e.target.closest('[data-c]');if(c){cat=c.dataset.c;$$('#ac .chip',sh.el).forEach(x=>x.setAttribute('aria-pressed',x===c))}
       if(e.target.closest('#asave')){
-        if(!cat){toast('Pick a category first');return}
+        if(!cat){toast('Pick a type first (Clinical, CT, MRI…)');return}
         const btn=e.target.closest('#asave');btn.disabled=true;let n=0;
-        const d=$('#ad',sh.el).value||today(),desc=$('#adesc',sh.el).value.trim();
-        for(const f of files){btn.textContent=`Saving ${++n} / ${files.length}…`;
-          try{const{full,thumb}=await processImage(f);const id=uid();
-            await DB.put('blobs',{id,blob:full});await save('media',{id,patientId,module:mod,category:cat,date:d,desc,visitId:visitId||null,created:Date.now()+n,thumb,size:full.size});}
+        const d=$('#ad',sh.el).value||today();
+        for(const it of items){btn.textContent=`Saving ${++n} / ${items.length}…`;
+          try{const{full,thumb}=await processImage(it.f);const id=uid();
+            await DB.put('blobs',{id,blob:full});await save('media',{id,patientId,module:mod,category:cat,date:d,desc:it.note.trim(),visitId:visitId||null,created:Date.now()+n,thumb,size:full.size});}
           catch(err){console.error(err);toast('Could not read one image')}}
-        urls.forEach(u=>URL.revokeObjectURL(u));sh.close();toast(`${files.length} image${files.length>1?'s':''} saved`);onDone&&onDone();
+        cleanup();sh.close();toast(`${items.length} photo${items.length>1?'s':''} saved`);onDone&&onDone();
       }});
   }
 }
@@ -963,7 +986,7 @@ ROUTES['/patient']=([id],q)=>{
     return `<div class="gbar"><button class="btn pri sm" style="flex:1.4" data-a="addimg">${I('camera','sm')} Add images</button><button class="btn ${cmp?'ghost':'sec'} sm" style="flex:1" data-a="cmp" ${all.length<2?'disabled':''}>${I('cols','sm')} ${cmp?'Cancel':'Compare'}</button></div>
     <div class="hscroll"><button class="chip ${mf==='all'?'on':''}" data-mf="all">All ${all.length}</button>${cats.map(c=>`<button class="chip ${mf===c?'on':''}" data-mf="${c}">${CATS[c]}${cnt(c)?' '+cnt(c):''}</button>`).join('')}</div>
     ${cmp?`<div class="note info" style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span>Select 2 images to compare (${picked.length}/2)</span><button class="btn pri sm" data-a="docmp" ${picked.length===2?'':'disabled'}>Compare</button></div>`:''}
-    ${list.length?`<div class="grid">${list.map(m=>`<button class="th ${picked.includes(m.id)?'picked':''}" data-i="${m.id}"><img data-mid="${m.id}" alt="${esc(mediaLabel(m))}" loading="lazy"><span class="bd">${esc(mediaLabel(m))} · ${fmtDate(m.date).slice(0,-5)}</span>${cmp?`<span class="sel">${picked.includes(m.id)?I('check','xs'):''}</span>`:''}</button>`).join('')}</div>`:emptyHTML('image',all.length?'Nothing in this category':'No images yet','Take photos or add CT / MRI from your gallery.',`<button class="btn pri sm" data-a="addimg">${I('camera','sm')} Add images</button>`)}`};
+    ${list.length?`<div class="grid">${list.map(m=>`<button class="th ${picked.includes(m.id)?'picked':''}" data-i="${m.id}"><img data-mid="${m.id}" alt="${esc(mediaLabel(m))}" loading="lazy"><span class="bd">${esc(mediaLabel(m))} · ${fmtDate(m.date).slice(0,-5)}</span>${m.desc?`<span class="nt" title="Has note">${I('edit','xs')}</span>`:''}${cmp?`<span class="sel">${picked.includes(m.id)?I('check','xs'):''}</span>`:''}</button>`).join('')}</div>`:emptyHTML('image',all.length?'Nothing in this category':'No images yet','Take photos or add CT / MRI from your gallery.',`<button class="btn pri sm" data-a="addimg">${I('camera','sm')} Add images</button>`)}`};
   const SNIP={
     common:['Duration:','Diabetic','Hypertensive','On blood thinners','Allergies:','Previous eye surgery:'],
     oculoplasty:['Onset:','Diplopia','Epiphora','Thyroid disease','Previous lid surgery:'],
@@ -1130,7 +1153,7 @@ ROUTES['/more']=([sub],q)=>{
   if(!sub){
     const el=mk('',`<div class="top"><span style="width:42px"></span><h1>More</h1><span style="width:42px"></span></div><div class="scroll pb">
       <div class="card" style="display:flex;align-items:center;gap:14px;padding:16px" data-go="/more/settings"><div class="av" style="width:58px;height:58px;font-size:19px">${d.name?esc(initials(d.name.replace(/^dr\.?\s*/i,''))):I('user')}</div><div style="flex:1;min-width:0"><b style="font-size:17px">${esc(d.name||'Doctor')}</b><div style="color:var(--ink3);font-size:13px">${esc(d.qual||'Tap to complete your profile')}${d.place?' · '+esc(d.place):''}</div></div>${I('chr','sm')}</div>
-      <div class="card" style="padding:4px 16px">${mItem('sliders','Settings','Profile, account, updates, storage','/more/settings')}${mItem('repeat','Import / Export & Backup','Backup, restore, CSV import','/more/settings?s=data')}${mItem('chart','Patient Statistics','Cases, images and storage','/more/stats')}${mItem('help','Help & Support','Tips and how things work','/more/help')}</div>
+      <div class="card" style="padding:4px 16px">${mItem('sliders','Settings','Profile, account, updates, storage','/more/settings')}${mItem('repeat','Import / Export & Backup','Backup, restore, CSV import','/more/settings?s=data')}${mItem('chart','Patient Statistics','Cases, images and storage','/more/stats')}${mItem('help','Help & Guide','How to use every feature','/more/help')}</div>
       <button class="btn sec" id="lo" style="margin-bottom:10px">${I('logout','sm')} Log out</button><p class="help" style="text-align:center">OculoVault v1.0 · data stays on this device</p></div>${navHTML('more')}`);
     $('#lo',el).onclick=()=>{Auth.endSession();S.authed=false;stack=[];history.replaceState(null,'',location.pathname);showLogin('login')};return el}
   if(sub==='stats'){
@@ -1140,16 +1163,12 @@ ROUTES['/more']=([sub],q)=>{
      <div class="card"><h3>Follow-ups</h3><div class="kv"><span>Overdue</span><b>${S.reviews.filter(r=>reviewStatus(r)==='overdue').length}</b></div><div class="kv"><span>Due today</span><b>${S.reviews.filter(r=>reviewStatus(r)==='today').length}</b></div><div class="kv"><span>Upcoming</span><b>${S.reviews.filter(r=>reviewStatus(r)==='upcoming').length}</b></div><div class="kv"><span>Visits logged</span><b>${S.visits.length}</b></div></div>
      <div class="card"><h3>Storage</h3><div class="kv"><span>Image data</span><b>${(sz/1048576).toFixed(1)} MB</b></div><div class="kv"><span>Device quota</span><b id="qt">…</b></div></div>`);
     navigator.storage&&navigator.storage.estimate&&navigator.storage.estimate().then(e=>{$('#qt',el).textContent=`${(e.usage/1048576).toFixed(0)} MB used of ${(e.quota/1073741824).toFixed(1)} GB`});return el}
-  if(sub==='help')return subScreen('Help & Support',`
-    <div class="card"><h3>Quick start</h3><div class="kv" style="display:block"><b>Add a patient</b><div class="help">Tap the + button. Name and hospital registration ID are the only required fields; pick a specialty to choose the diagnosis in one tap.</div></div><div class="kv" style="display:block"><b>Add photos</b><div class="help">Open the patient → Media → Add images. Take a photo or pick several from the gallery, choose a category (Pre-op, Post-op, CT, 9-Gaze…), save.</div></div><div class="kv" style="display:block"><b>Zoom &amp; compare</b><div class="help">Tap an image for full screen. Pinch or double-tap to zoom, swipe for next. Use Compare to view two images side by side.</div></div><div class="kv" style="display:block"><b>History &amp; notes</b><div class="help">Notes tab → type the history per specialty (tap the + chips for quick prompts like Mechanism or Duration), write management, and keep a dated notes log. Search finds text inside notes too.</div></div><div class="kv" style="display:block"><b>Follow-ups</b><div class="help">Log a visit with notes, photos and a next review date. Due and overdue reviews appear on the dashboard and in the Follow-ups tab.</div></div></div>
-    <div class="card"><h3>Install on your phone</h3><div class="help" style="margin:0"><b>iPhone:</b> Safari → Share → Add to Home Screen.<br><b>Android:</b> Chrome → ⋮ → Install app.</div></div>
-    <div class="card"><h3>Keep your data safe</h3><div class="help" style="margin:0">Data is stored on this device only. Make a backup from More → Settings → Import / Export regularly (Full backup includes photos, Text only is tiny and fast), and save your recovery code. Moving to a new phone: Restore from backup file. Spreadsheet users: Import CSV / Export CSV. New versions load by themselves when you open the app online; or use Settings → Check updates.</div></div>
-    <div class="card"><h3>About</h3><div class="kv"><span>App</span><b>OculoVault v1.0</b></div><div class="kv"><span>Storage</span><b>On-device (IndexedDB)</b></div></div>`);
+  if(sub==='help')return subScreen('Help & Guide',`<div class="card" style="background:var(--mint2)"><b>Quick tour</b><div class="help" style="margin:4px 0 0">+ adds a patient · Patients finds one · inside a patient: <b>Overview · Media · Notes · Follow-up</b> · More → Settings for backup.</div></div><div class="sect" style="margin:18px 0 8px"><h2>Getting started</h2></div><div class="card gd"><details><summary>Add a patient</summary><div class="help">Tap the <b>+</b> button at the bottom. Only <b>Name</b> and <b>Hospital Reg ID</b> are required. Pick a specialty and tap the diagnosis chips. If the Reg ID already exists, the app warns you so you never create a duplicate.</div></details><details><summary>Specialties</summary><div class="help">Oculoplasty, Squint and Trauma share one patient list. A patient can have more than one specialty (e.g. Squint + Trauma): open the patient → ⋮ → <b>Add specialty</b>.</div></details><details><summary>Find a patient</summary><div class="help">Patients tab → search by name, Reg ID or mobile. Typing 3+ letters also searches inside history, management and notes (e.g. “handlebar”, “levator”).</div></details></div><div class="sect" style="margin:18px 0 8px"><h2>Photos & scans</h2></div><div class="card gd"><details><summary>Add photos</summary><div class="help">Home → specialty → patient → <b>Media</b> tab → <b>Add images</b>. Choose <b>Take photo</b> (camera) or <b>From gallery</b> (select many). Use <b>Take another</b> to keep shooting, then pick the Type and Save.</div></details><details><summary>Type by specialty</summary><div class="help"><b>Oculoplasty:</b> Clinical, Pre-op, Post-op, Follow-up, CT, MRI. <b>Squint:</b> Clinical, Pre-op, 9-Gaze, Post-op, Follow-up, Hess Chart. <b>Trauma:</b> Clinical, Initial, Pre-op, Post-op, Follow-up, CT, MRI, X-ray.</div></details><details><summary>Note on a photo</summary><div class="help">Each photo has its own note box while adding. Later: open the photo → ✎ → edit note, type or date. Thumbnails with a note show a small ✎ badge.</div></details><details><summary>View & compare</summary><div class="help">Tap a photo to open it full-screen: pinch or double-tap to zoom, swipe for next. In Media tap <b>Compare</b>, pick two photos (e.g. pre-op vs post-op) to see them side by side.</div></details><details><summary>Follow-up photos</summary><div class="help">When you log a visit you can attach photos; they are saved as Follow-up and linked to that visit.</div></details></div><div class="sect" style="margin:18px 0 8px"><h2>Notes & history</h2></div><div class="card gd"><details><summary>History & Management</summary><div class="help">Patient → <b>Notes</b> tab. Each specialty has its own History and Management box with quick snippet chips (Duration, Mechanism, Plan…). They save automatically as you type.</div></details><details><summary>Notes log</summary><div class="help">Same tab → <b>+ Add note</b> for dated notes: counselling, consent, phone calls. Tap a note to edit or delete it.</div></details></div><div class="sect" style="margin:18px 0 8px"><h2>Follow-ups</h2></div><div class="card gd"><details><summary>Log a visit</summary><div class="help">Patient → <b>Log visit</b>. Write the visit notes and pick the next review date (1 week, 2 weeks, 1 month…). The old pending review is marked done automatically.</div></details><details><summary>Follow-ups tab</summary><div class="help">Shows Overdue, Today and Upcoming. Tap <b>Log visit</b> to record the visit or <b>Mark done</b> to just close it. The red badge on the bell and tab counts what is due.</div></details></div><div class="sect" style="margin:18px 0 8px"><h2>Backup & moving data</h2></div><div class="card gd"><details><summary>Backup</summary><div class="help">More → Settings → <b>Import / Export</b>. <b>Full backup</b> includes all photos (bigger). <b>Text only</b> is tiny and fast. Save the file to Files, Drive or WhatsApp to yourself.</div></details><details><summary>Restore on a new phone</summary><div class="help">Install the app, create an account, then Settings → <b>Restore from backup file</b>. Use <b>Merge</b> normally, <b>Replace</b> only for a fresh phone.</div></details><details><summary>Excel / CSV</summary><div class="help"><b>Export CSV</b> gives a spreadsheet of all patients. <b>Import CSV</b> reads Reg ID, Name, Age, Sex, Mobile, Diagnosis, Eye and shows a preview before adding anything.</div></details><details><summary>Share summary</summary><div class="help">Patient → ⋮ → <b>Share summary</b> sends a short text summary (no photos) through WhatsApp or any app.</div></details></div><div class="sect" style="margin:18px 0 8px"><h2>Account & updates</h2></div><div class="card gd"><details><summary>Profile, password, logout</summary><div class="help">More → Settings. Change your name/hospital, set a password, turn on “ask for password every launch”, or Log out.</div></details><details><summary>Forgot password</summary><div class="help">Use <b>Forgot password</b> on the login screen with your <b>recovery code</b> (shown once when you signed up — keep it safe).</div></details><details><summary>Updates</summary><div class="help">New versions load automatically when you open the app online. A “New version available” banner may appear: tap <b>Update</b>. Or Settings → <b>Check updates</b>. Your data is never touched by updates.</div></details><details><summary>Install on phone</summary><div class="help"><b>iPhone:</b> Safari → Share → Add to Home Screen. <b>Android:</b> Chrome → ⋮ → Install app.</div></details></div><div class="sect" style="margin:18px 0 8px"><h2>Good to know</h2></div><div class="card gd"><details><summary>Where is data stored?</summary><div class="help">Only on this phone (browser storage). Nothing goes to any server. Clearing Safari/Chrome website data or deleting the app erases it, so take backups regularly. Don’t change the app’s web address or the old data won’t show.</div></details><details><summary>Image quality</summary><div class="help">Settings → Image quality: Standard saves space, High keeps more detail for CT/MRI screenshots.</div></details><details><summary>Something not showing?</summary><div class="help">Close the app fully and reopen it while online. If it still looks old: Settings → Check updates.</div></details></div><div class="card" style="margin-top:14px"><h3>About</h3><div class="kv"><span>App</span><b>OculoVault</b></div><div class="kv"><span>Version</span><b>${BUILD}</b></div><div class="kv"><span>Storage</span><b>On this device</b></div></div>`);
   return ROUTES['/more']([]);
 };
 
 /* ============ Settings hub, backup/restore, CSV import, summary share, auto-update ============ */
-const BUILD='2026.11.05-1541';
+const BUILD='2026.11.05-1606';
 
 /* ---------- file helpers ---------- */
 function deliverFile(blob,name){
