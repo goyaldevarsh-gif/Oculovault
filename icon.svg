@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0B5E78"/><stop offset=".55" stop-color="#074C65"/><stop offset="1" stop-color="#06384F"/></linearGradient>
+<linearGradient id="t" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#19B8AC"/><stop offset="1" stop-color="#EFFFFC"/></linearGradient></defs>
+<rect width="512" height="512" rx="112.0" fill="url(#bg)"/>
+<g transform="translate(66.56 147.45600000000002) scale(3.1573333333333333)">
+<path d="M7 43 C5 39 9 36 13 33 C27 18 44 8 62 8 C84 8 103 19 114 35 C98 26 82 20.5 62 20.5 C43 20.5 29 28 17 44.5 C14 48 9 47 7 43Z" fill="#FFFFFF"/>
+<path d="M21 50.5 C33 62 47 66.5 62 66.5 C81 66.5 100 56 111 39 C98 51.5 80 59 62 59 C46 59 32 56 21 50.5Z" fill="url(#t)"/>
+<g transform="translate(62 40.5) scale(.9) translate(-62 -38)"><circle cx="62" cy="38" r="17.5" fill="url(#ir)"/>
+<g opacity=".28" fill="#fff"><path d="M62 38 L62 20.5 A17.5 17.5 0 0 1 77 29.2Z"/><path d="M62 38 L46.8 29.2 A17.5 17.5 0 0 1 62 20.5Z" opacity=".5"/></g>
+<g opacity=".16" fill="#04323a"><path d="M62 38 L79.5 38 A17.5 17.5 0 0 1 70.7 53.2Z"/><path d="M62 38 L53.3 53.2 A17.5 17.5 0 0 1 44.5 38Z"/></g>
+<circle cx="62" cy="38" r="7" fill="#075A6C"/></g>
+<defs><radialGradient id="ir" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#38D3C4"/><stop offset="1" stop-color="#0D8F8A"/></radialGradient></defs></g></svg>
