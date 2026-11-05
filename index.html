@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <title>OculoVault</title>
-<meta name="ov-build" content="2026.11.05-1635">
+<meta name="ov-build" content="2026.11.05-1658">
 <meta name="description" content="OculoVault — Your Ophthalmology Practice, Organised.">
 <meta name="theme-color" content="#F8FAFC">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
@@ -313,6 +313,9 @@ a{text-decoration:none}a.lnk,.help .lnk{text-decoration:underline}
 .gd .help{margin:0 0 14px;line-height:1.55;color:#334155}
 .cpy{text-align:center;font-size:11.5px;font-weight:600;color:var(--ink3);padding:18px 8px 6px;line-height:1.5;letter-spacing:.01em}
 .cpy span{display:block;font-weight:500;font-size:10.5px;opacity:.85}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.row3 small{display:block;text-align:center;font-size:11.5px;font-weight:600;color:var(--ink3);margin-top:4px}
+.row3 .inp{text-align:center}
 </style></head>
 <body><div id="app"></div>
 <script>
@@ -456,8 +459,21 @@ const reviewsOf=pid=>S.reviews.filter(r=>r.patientId===pid);
 const mediaOf=pid=>S.media.filter(m=>m.patientId===pid).sort((a,b)=>b.date.localeCompare(a.date)||b.created-a.created);
 const pendingReview=pid=>reviewsOf(pid).filter(r=>!r.done).sort((a,b)=>a.date.localeCompare(b.date))[0];
 const patientMods=pid=>casesOf(pid).map(c=>c.module);
-const ageOf=p=>{if(p.dob){const b=new Date(p.dob+'T00:00:00'),n=new Date();let a=n.getFullYear()-b.getFullYear();const m=n.getMonth()-b.getMonth();if(m<0||(m===0&&n.getDate()<b.getDate()))a--;return a}return p.age===''||p.age==null?null:Number(p.age)};
-const ageSex=p=>{const a=ageOf(p);const s=p.sex?p.sex[0]:'';return [a!=null?a:'',s].filter(x=>x!=='').join(' · ')||'—'};
+const _ymd=(b,n)=>{let y=n.getFullYear()-b.getFullYear(),m=n.getMonth()-b.getMonth(),d=n.getDate()-b.getDate();if(d<0){m--;d+=new Date(n.getFullYear(),n.getMonth(),0).getDate()}if(m<0){y--;m+=12}return y<0?{y:0,m:0,d:0}:{y,m,d}};
+/* age as years/months/days. DOB → exact. Typed age (ageY/ageM/ageD at ageAt) keeps ageing automatically. Legacy p.age = years only. */
+const ageParts=p=>{
+  const n=new Date();n.setHours(12,0,0,0);
+  if(p.dob)return _ymd(new Date(p.dob+'T12:00:00'),n);
+  if(p.ageAt&&(p.ageY!==''&&p.ageY!=null||p.ageM!==''&&p.ageM!=null||p.ageD!==''&&p.ageD!=null)){
+    const b=new Date(p.ageAt+'T12:00:00');b.setFullYear(b.getFullYear()-(+p.ageY||0));b.setMonth(b.getMonth()-(+p.ageM||0));b.setDate(b.getDate()-(+p.ageD||0));return _ymd(b,n)}
+  if(p.age!==''&&p.age!=null&&!isNaN(+p.age))return{y:+p.age,m:0,d:0};
+  return null};
+const ageOf=p=>{const a=ageParts(p);return a?a.y:null};
+const ageStr=(p,compact)=>{const a=ageParts(p);if(!a)return '';const t=[];
+  if(compact&&a.y>=5)return a.y+'y';
+  if(a.y)t.push(a.y+(compact?'y':' y'));if(a.m||(a.y&&a.d))t.push(a.m+(compact?'m':' m'));if(a.d||!t.length)t.push(a.d+(compact?'d':' d'));
+  return t.join(' ')};
+const ageSex=p=>{const a=ageStr(p,true);const s=p.sex?p.sex[0]:'';return [a,s].filter(x=>x!=='').join(' · ')||'—'};
 const dxText=c=>{if(!c||!c.diagnoses||!c.diagnoses.length)return '';const d=c.diagnoses.map(x=>x==='Other'&&c.otherDx?c.otherDx:x).join(', ');return d+(c.side?` (${c.side})`:'')};
 const patientDx=pid=>casesOf(pid).map(dxText).filter(Boolean).join(' · ');
 const reviewStatus=r=>r.done?'done':r.date<today()?'overdue':r.date===today()?'today':'upcoming';
@@ -894,19 +910,20 @@ function readCaseForm(cf){
 /* ---------- Add / Edit patient ---------- */
 function patientForm(editId,presetMod){
   const p=editId?byId('patients',editId):null;if(editId&&!p)return ROUTES['/patients']([],{});
+  const AP=(p&&!p.dob&&ageParts(p))?{y:ageParts(p).y||'',m:ageParts(p).m||'',d:ageParts(p).d||''}:{y:'',m:'',d:''};
   let ageMode=p&&p.dob?'dob':'age',mod=presetMod&&MODS[presetMod]?presetMod:'',sex=p?p.sex:'';
   const el=mk('',`<div class="top"><button class="ib" data-back="${p?'/patient/'+p.id:'/patients'}">${I('back')}</button><h1>${p?'Edit Patient':'Add Patient'}</h1><span style="width:42px"></span></div>
   <div class="scroll" id="sc">
    <div class="fld"><label>Patient name <span class="req">*</span></label><input class="inp" id="n" autocomplete="off" autocapitalize="words" placeholder="Full name" value="${esc(p?p.name:'')}"></div>
-   <div class="fld"><label>Age / Date of birth</label><div class="chips seg" id="am" style="margin-bottom:8px"><button type="button" class="chip" data-m="age">Age</button><button type="button" class="chip" data-m="dob">Date of birth</button></div>
-     <input class="inp" id="age" type="number" inputmode="numeric" min="0" max="120" placeholder="Age in years" value="${p&&p.age!==''&&p.age!=null&&!p.dob?esc(p.age):''}"><input class="inp hidden" id="dob" type="date" max="${today()}" value="${p&&p.dob?p.dob:''}"></div>
+   <div class="fld"><label>Age / Date of birth</label><div class="chips seg" id="am" style="margin-bottom:8px"><button type="button" class="chip" data-m="age">Age (Y / M / D)</button><button type="button" class="chip" data-m="dob">Date of birth</button></div>
+     <div class="row3" id="agebox"><div><input class="inp" id="ay" type="number" inputmode="numeric" min="0" max="120" placeholder="0" value="${AP.y}"><small>Years</small></div><div><input class="inp" id="am2" type="number" inputmode="numeric" min="0" max="11" placeholder="0" value="${AP.m}"><small>Months</small></div><div><input class="inp" id="ad2" type="number" inputmode="numeric" min="0" max="31" placeholder="0" value="${AP.d}"><small>Days</small></div></div><input class="inp hidden" id="dob" type="date" max="${today()}" value="${p&&p.dob?p.dob:''}"></div>
    <div class="fld"><label>Sex</label><div class="chips seg" id="sx">${['Male','Female','Other'].map(s=>`<button type="button" class="chip" data-s="${s}" aria-pressed="${sex===s}">${s}</button>`).join('')}</div></div>
    <div class="fld"><label>Mobile number</label><input class="inp" id="mob" type="tel" inputmode="tel" placeholder="e.g. 98765 43210" value="${esc(p?p.mobile:'')}"></div>
    <div class="fld"><label>Hospital registration ID <span class="req">*</span></label><input class="inp" id="rid" autocomplete="off" placeholder="As printed on the hospital file" value="${esc(p?p.regId:'')}"><div class="help" id="rh">Enter the number printed on the patient's hospital file.</div></div>
    ${p?'':`<div class="card" style="margin-top:6px"><h3>Specialty &amp; diagnosis <span style="text-transform:none;letter-spacing:0;font-weight:600">optional</span></h3><div class="chips seg" id="sp">${MODKEYS.map(k=>`<button type="button" class="chip" data-k="${k}" aria-pressed="${mod===k}">${MODS[k].label}</button>`).join('')}</div><div id="cfh" style="margin-top:14px"></div></div>`}
    <div class="sp"></div></div>
   <div class="savebar"><button class="btn pri" id="save">${I('check','sm')} ${p?'Save changes':'Save Patient'}</button></div>`);
-  const setAge=()=>{$$('#am .chip',el).forEach(c=>c.setAttribute('aria-pressed',c.dataset.m===ageMode));$('#age',el).classList.toggle('hidden',ageMode!=='age');$('#dob',el).classList.toggle('hidden',ageMode!=='dob')};setAge();
+  const setAge=()=>{$$('#am .chip',el).forEach(c=>c.setAttribute('aria-pressed',c.dataset.m===ageMode));$('#agebox',el).classList.toggle('hidden',ageMode!=='age');$('#dob',el).classList.toggle('hidden',ageMode!=='dob')};setAge();
   const drawCase=()=>{const h=$('#cfh',el);if(!h)return;h.innerHTML=mod?caseFormHTML(mod):''};drawCase();
   bindCaseForm(el);
   const dup=()=>{const v=$('#rid',el).value.trim().toLowerCase().replace(/\s+/g,'');if(!v){$('#rh',el).className='help';$('#rh',el).textContent="Enter the number printed on the patient's hospital file.";$('#rid',el).classList.remove('err');return null}
@@ -924,7 +941,7 @@ function patientForm(editId,presetMod){
       if(!rid){toast('Enter the hospital registration ID');$('#rid',el).focus();return}
       if(dup()){toast('This registration ID already exists');return}
       const btn=e.target.closest('#save');btn.disabled=true;
-      const data={name,regId:rid,sex,mobile:$('#mob',el).value.trim(),age:ageMode==='age'?$('#age',el).value:'',dob:ageMode==='dob'?$('#dob',el).value:'',updated:Date.now()};
+      const data={name,regId:rid,sex,mobile:$('#mob',el).value.trim(),age:'',ageY:ageMode==='age'?$('#ay',el).value:'',ageM:ageMode==='age'?$('#am2',el).value:'',ageD:ageMode==='age'?$('#ad2',el).value:'',ageAt:ageMode==='age'?today():'',dob:ageMode==='dob'?$('#dob',el).value:'',updated:Date.now()};
       try{
         if(p){Object.assign(p,data);await save('patients',p);toast('Patient updated');go('/patient/'+p.id,true)}
         else{const np={id:uid(),created:Date.now(),...data};await save('patients',np);
@@ -973,7 +990,7 @@ ROUTES['/patient']=([id],q)=>{
   const ov=()=>{
     const cs=casesOf(id),pr=pendingReview(id),lv=lastVisit(id),a=ageOf(p);
     let h=`<div class="card"><h3>Patient details <button class="eb" data-a="editp">Edit</button></h3>
-      <div class="kv"><span>Reg. ID</span><b>${esc(p.regId)}</b></div><div class="kv"><span>Age / Sex</span><b>${a!=null?a+' yrs':'—'}${p.sex?' · '+p.sex:''}</b></div>${p.dob?`<div class="kv"><span>Date of birth</span><b>${fmtDate(p.dob)}</b></div>`:''}<div class="kv"><span>Mobile</span><b>${p.mobile?`<a href="tel:${esc(p.mobile.replace(/[^\d+]/g,''))}" style="color:var(--teal2)">${esc(p.mobile)}</a>`:'—'}</b></div><div class="kv"><span>Registered</span><b>${fmtDate(isoDate(new Date(p.created)))}</b></div></div>`;
+      <div class="kv"><span>Reg. ID</span><b>${esc(p.regId)}</b></div><div class="kv"><span>Age / Sex</span><b>${ageStr(p)||'—'}${p.sex?' · '+p.sex:''}</b></div>${p.dob?`<div class="kv"><span>Date of birth</span><b>${fmtDate(p.dob)}</b></div>`:''}<div class="kv"><span>Mobile</span><b>${p.mobile?`<a href="tel:${esc(p.mobile.replace(/[^\d+]/g,''))}" style="color:var(--teal2)">${esc(p.mobile)}</a>`:'—'}</b></div><div class="kv"><span>Registered</span><b>${fmtDate(isoDate(new Date(p.created)))}</b></div></div>`;
     cs.forEach(c=>{const M=MODS[c.module],dx=(c.diagnoses||[]).map(d=>d==='Other'&&c.otherDx?c.otherDx:d);
       h+=`<div class="card"><div class="casehd"><div class="si">${I(M.icon,'sm')}</div><b>${M.label}</b><button data-a="editcase" data-c="${c.id}">Edit</button></div>
        <div class="kv" style="display:block"><span style="display:block;margin-bottom:7px">Diagnosis</span>${dx.length?`<div class="chips" style="gap:6px">${dx.map(d=>`<span class="tag">${esc(d)}</span>`).join('')}${c.side?`<span class="tag navy">${c.side}</span>`:''}</div>`:'<span style="color:var(--ink3)">Not recorded — tap Edit</span>'}</div>
@@ -1146,7 +1163,7 @@ const csvCell=v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""
 function exportCSV(){
   const rows=[['Reg ID','Name','Age','Sex','Mobile','Specialty','Diagnosis','Eye','Investigations','History','Management','Notes','Last visit','Next follow-up','Images','Registered']];
   [...S.patients].sort((a,b)=>a.name.localeCompare(b.name)).forEach(p=>{const cs=casesOf(p.id),pr=pendingReview(p.id);
-    rows.push([p.regId,p.name,ageOf(p)??'',p.sex,p.mobile,cs.map(c=>MODS[c.module].label).join(' + '),cs.map(c=>(c.diagnoses||[]).map(d=>d==='Other'&&c.otherDx?c.otherDx:d).join('; ')).filter(Boolean).join(' | '),cs.map(c=>c.side).filter(Boolean).join(' | '),cs.map(c=>(c.inv||[]).join('; ')).filter(Boolean).join(' | '),cs.map(c=>c.history||'').filter(Boolean).join(' | '),cs.map(c=>c.management||'').filter(Boolean).join(' | '),(p.notes||[]).map(n=>n.date+': '+n.text).join(' | '),lastVisit(p.id)||'',pr?pr.date:'',S.media.filter(m=>m.patientId===p.id).length,isoDate(new Date(p.created))])});
+    rows.push([p.regId,p.name,ageStr(p),p.sex,p.mobile,cs.map(c=>MODS[c.module].label).join(' + '),cs.map(c=>(c.diagnoses||[]).map(d=>d==='Other'&&c.otherDx?c.otherDx:d).join('; ')).filter(Boolean).join(' | '),cs.map(c=>c.side).filter(Boolean).join(' | '),cs.map(c=>(c.inv||[]).join('; ')).filter(Boolean).join(' | '),cs.map(c=>c.history||'').filter(Boolean).join(' | '),cs.map(c=>c.management||'').filter(Boolean).join(' | '),(p.notes||[]).map(n=>n.date+': '+n.text).join(' | '),lastVisit(p.id)||'',pr?pr.date:'',S.media.filter(m=>m.patientId===p.id).length,isoDate(new Date(p.created))])});
   deliverFile(new Blob(['﻿'+rows.map(r=>r.map(csvCell).join(',')).join('\n')],{type:'text/csv'}),`OculoVault-patients-${today()}.csv`);
 }
 function mItem(ic,t,s,go_){return `<button class="mi" data-go="${go_}"><div class="li">${I(ic)}</div><div><b>${t}</b><span>${s}</span></div>${I('chr','sm')}</button>`}
@@ -1172,7 +1189,7 @@ ROUTES['/more']=([sub],q)=>{
 };
 
 /* ============ Settings hub, backup/restore, CSV import, summary share, auto-update ============ */
-const BUILD='2026.11.05-1635';
+const BUILD='2026.11.05-1658';
 
 /* ---------- file helpers ---------- */
 function deliverFile(blob,name){
@@ -1265,13 +1282,13 @@ function buildImport(rows){
   const recs=[];let skipped=0;
   rows.slice(1).forEach(r=>{const regId=get(r,'regId'),name=get(r,'name');if(!regId||!name){skipped++;return}
     let sx=get(r,'sex').toLowerCase();sx=!sx?'':/^m/.test(sx)?'Male':/^f/.test(sx)?'Female':'Other';
-    const age=(get(r,'age').match(/\d+/)||[''])[0],dm=get(r,'dob').match(/^(\d{4})-(\d{2})-(\d{2})$/),dob=dm?get(r,'dob'):'';
+    const at=get(r,'age'),am=n=>{const x=at.match(new RegExp('(\\d+)\\s*'+n,'i'));return x?x[1]:''},ay=am('y'),amo=am('m'),ad=am('d'),age=(ay||amo||ad)?'':(at.match(/\d+/)||[''])[0],dm=get(r,'dob').match(/^(\d{4})-(\d{2})-(\d{2})$/),dob=dm?get(r,'dob'):'';
     const eyeT=get(r,'eye').toLowerCase(),side=/^(od|right|re|r)$/.test(eyeT)?'OD':/^(os|left|le|l)$/.test(eyeT)?'OS':/^(ou|both|bilateral|bl)$/.test(eyeT)?'OU':'';
     const dx=matchDxText(get(r,'diagnosis')),explicit=modFromText(get(r,'specialty'));
     const mods=explicit.length?explicit:[...new Set(dx.hits.map(h=>h.m))];
     const cases=mods.map((m,i)=>{const mine=dx.hits.filter(h=>h.m===m).map(h=>h.d),other=i===0&&dx.rest.length?dx.rest.join('; '):'';
       return{module:m,diagnoses:other?[...mine,'Other']:mine,otherDx:other,side,inv:[],history:get(r,'history'),management:get(r,'management')}});
-    recs.push({regId,name,sex:sx,age,dob,mobile:get(r,'mobile'),cases});
+    recs.push({regId,name,sex:sx,age,ageY:ay,ageM:amo,ageD:ad,ageAt:(ay||amo||ad)?today():'',dob,mobile:get(r,'mobile'),cases});
   });
   return{idx,recs,skipped};
 }
@@ -1289,7 +1306,7 @@ async function importCSVFlow(){
   sh.el.addEventListener('click',async e=>{if(!e.target.closest('#go'))return;const upd=$('#upd',sh.el)?.checked;sh.close();toast('Importing…');
     const mkCase=(p,c)=>save('cases',{id:uid(),patientId:p.id,...c,notes:undefined,created:Date.now(),visitDate:today()});
     let n=0,u=0;
-    for(const r of fresh){const p=await save('patients',{id:uid(),name:r.name,regId:r.regId,sex:r.sex,mobile:r.mobile,age:r.age,dob:r.dob,created:Date.now()+n,updated:Date.now()+n});for(const c of r.cases)await mkCase(p,c);n++}
+    for(const r of fresh){const p=await save('patients',{id:uid(),name:r.name,regId:r.regId,sex:r.sex,mobile:r.mobile,age:r.age,ageY:r.ageY,ageM:r.ageM,ageD:r.ageD,ageAt:r.ageAt,dob:r.dob,created:Date.now()+n,updated:Date.now()+n});for(const c of r.cases)await mkCase(p,c);n++}
     if(upd)for(const r of dups){const p=have.get(norm(r.regId));let ch=false;
       for(const[k,v]of Object.entries({sex:r.sex,mobile:r.mobile,age:r.age,dob:r.dob}))if(v&&!p[k]){p[k]=v;ch=true}
       for(const c of r.cases)if(!casesOf(p.id).some(x=>x.module===c.module)){await mkCase(p,c);ch=true}
