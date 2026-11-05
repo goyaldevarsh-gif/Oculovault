@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <title>OculoVault</title>
-<meta name="ov-build" content="2026.11.05-1606">
+<meta name="ov-build" content="2026.11.05-1635">
 <meta name="description" content="OculoVault — Your Ophthalmology Practice, Organised.">
 <meta name="theme-color" content="#F8FAFC">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
@@ -311,6 +311,8 @@ a{text-decoration:none}a.lnk,.help .lnk{text-decoration:underline}
 .gd summary::after{content:'+';position:absolute;right:2px;top:12px;font-size:22px;font-weight:500;color:var(--teal)}
 .gd details[open] summary::after{content:'–'}
 .gd .help{margin:0 0 14px;line-height:1.55;color:#334155}
+.cpy{text-align:center;font-size:11.5px;font-weight:600;color:var(--ink3);padding:18px 8px 6px;line-height:1.5;letter-spacing:.01em}
+.cpy span{display:block;font-weight:500;font-size:10.5px;opacity:.85}
 </style></head>
 <body><div id="app"></div>
 <script>
@@ -660,11 +662,13 @@ async function render(){
   const el=await fn(seg.slice(1),q);if(curHash!==h)return;
   mountScreen(el);
 }
-function mountScreen(el){
+const BRAND=()=>`<div class="cpy">© ${new Date().getFullYear()} Dr. Devarsh Goyal · OculoVault<span>Designed &amp; developed by Dr. Devarsh Goyal</span></div>`;
+function addBrand(el){if(!el||el.querySelector(".cpy"))return;const sc=el.querySelector('.scroll')||el.querySelector('.onb')||el;sc.insertAdjacentHTML('beforeend',BRAND())}
+function mountScreen(el){addBrand(el);
   const app=$('#app');$$('.screen',app).forEach(s=>s.remove());app.appendChild(el);
   hydrateThumbs(el);
 }
-function setScreen(el){const app=$('#app');$$('.screen',app).forEach(s=>s.remove());app.appendChild(el);hydrateThumbs(el)}
+function setScreen(el){addBrand(el);const app=$('#app');$$('.screen',app).forEach(s=>s.remove());app.appendChild(el);hydrateThumbs(el)}
 function mk(cls,html){const el=document.createElement('div');el.className='screen '+(cls||'');el.innerHTML=html;return el}
 function navHTML(cur){
   const n=dueCount(),it=(k,ic,l,h)=>`<button class="nb ${cur===k?'on':''}" data-go="${h}">${I(ic)}<span>${l}</span>${k==='followups'&&n?`<i class="bd">${n}</i>`:''}</button>`;
@@ -1168,7 +1172,7 @@ ROUTES['/more']=([sub],q)=>{
 };
 
 /* ============ Settings hub, backup/restore, CSV import, summary share, auto-update ============ */
-const BUILD='2026.11.05-1606';
+const BUILD='2026.11.05-1635';
 
 /* ---------- file helpers ---------- */
 function deliverFile(blob,name){
